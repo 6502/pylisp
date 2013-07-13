@@ -9,29 +9,15 @@ A Lisp dialect compiler targeting Python
 Example session:
 
     ~/checkout/pylisp/src$ python pylisp.py
-    PyLisp 0.001
+    PyLisp 0.002
     > (defun square (x) (* x x))
-    --> <function square at 0xb744fbc4>
+    --> <function lambda at 0x94a7a74>
     > (map #'square (range 10))
     --> (0 1 4 9 16 25 36 49 64 81)
-    > (setf *show-code* True)
-    --> True
-    > (defun fact (x) (if (< x 2) 1 (* x (fact (- x 1)))))
-
-    def _(_Lx):
-
-        _Lx = [_Lx]
-        _ = f_L_3c(_Lx[0], 2)
-        if _:
-
-            _ = 1
-        else:
-
-            _ = f_L_2a(_Lx[0], f_Lfact(f_L_2d(_Lx[0], 1)))
-
-        return _
-
-    _.__name__ = 'fact'
-    f_Lfact = _
-    --> <function fact at 0xb744fcdc>
-    >
+    > (defun adder (x) (lambda (y) (setq x (+ x y))))
+    --> <function lambda at 0x94a7b1c>
+    > (let ((a (adder 10)))
+        (dotimes (i 5)
+          (print (funcall a 3))))
+    Segmentation fault (core dumped)
+    ~/checkout/pylisp/src$ :-(

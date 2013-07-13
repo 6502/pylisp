@@ -48,3 +48,5 @@
            (+ (list 'lambda (map #'first bindings))
               (xlist body)))
      (map #'second bindings)))
+
+(print "PyLisp 0.002")

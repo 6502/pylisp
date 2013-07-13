@@ -6,7 +6,7 @@ from opcode import opname, opmap
 import types
 
 # When true every code object produced is immediately disassembled
-debug = True
+debug = False
 
 # Map all defined opcodes to globals
 for k in opmap.keys():

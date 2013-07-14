@@ -171,7 +171,7 @@ class Context(object):
 
         bytestr = bytes(bytestr) if sys.version_info > (3,) else "".join(map(chr, bytestr))
 
-        flags = inspect.CO_NEWLOCALS | inspect.CO_OPTIMIZED
+        flags = 0 if self.cellvars else (inspect.CO_NEWLOCALS | inspect.CO_OPTIMIZED)
 
         if not self.freevars:
             flags |= inspect.CO_NOFREE
@@ -320,15 +320,29 @@ def f_Lcompile(x):
                     ctx.code.append((LOADCL, v))
                 ctx.code.append((BUILD_TUPLE, len(nctx.freevars)))
                 ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
+                if sys.version_info > (3,):
+                    # Python 3 qualified name
+                    ctx.constants.append("<lambda>")
+                    ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
+                    ctx.stack(4)
+                    ctx.stack(-3)
+                else:
+                    ctx.stack(3)
+                    ctx.stack(-2)
                 ctx.code.append((MAKE_CLOSURE, 0))
-                ctx.stack(3)
-                ctx.stack(-2)
             else:
                 # Function (why not an empty closure?)
                 ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
+                if sys.version_info > (3,):
+                    # Python 3 qualified name
+                    ctx.constants.append("<lambda>")
+                    ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
+                    ctx.stack(3)
+                    ctx.stack(-2)
+                else:
+                    ctx.stack(2)
+                    ctx.stack(-1)
                 ctx.code.append((MAKE_FUNCTION, 0))
-                ctx.stack(2)
-                ctx.stack(-1)
             return
 
         if s is _fsetq:

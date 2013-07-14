@@ -1,6 +1,7 @@
 (setq None py:None)
 (setq True py:True)
 (setq False py:False)
+
 (fsetq + (python "lambda x, y: x + y"))
 (fsetq - (python "lambda x, y: x - y"))
 (fsetq * (python "lambda x, y: x * y"))
@@ -21,11 +22,13 @@
 (fsetq set-aref (python "lambda v, i, x: (v.__setitem__(i, x), x)[1]"))
 (fsetq funcall (python "lambda f, *args: f(*args)"))
 (fsetq apply (python "lambda f, args: f(*args)"))
+(fsetq range (python "lambda *args: list(range(*args))"))
+(fsetq map (python "lambda *args: list(map(*args))"))
 (defun first (x) (aref x 0))
 (defun second (x) (aref x 1))
+(fsetq rest (python "lambda x: x[1:]"))
 (defun xlist (x) (apply #'list x))
-(fsetq range py:range)
-(fsetq map py:map)
+(fsetq length py:len)
 
 (defmacro dotimes (var+count *body)
   (list 'mapn
@@ -49,4 +52,13 @@
               (xlist body)))
      (map #'second bindings)))
 
+(defmacro and (*conds)
+  (if (= (length conds) 1)
+      (first conds)
+      (list 'if (first conds)
+            (+ (list 'and) (xlist (rest conds)))
+            False)))
+
 (print "PyLisp 0.002")
+
+(python "globals().__setitem__('debug', True)")

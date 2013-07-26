@@ -84,8 +84,8 @@ class Context(object):
 
         self.pending_fixes = {}
         self.args = 0
-        self.curstack = 0
-        self.maxstack = 0
+        self.curstack = 1
+        self.maxstack = 1
         self.constants = [None] # Why None is always here??
         self.locals = []        # Local names
         self.names = []         # Global names
@@ -93,10 +93,11 @@ class Context(object):
         self.freevars = []      # Nonlocals
         self.code = []
 
-    def stack(self, n):
-        self.curstack += n
-        if self.curstack > self.maxstack:
-            self.maxstack = self.curstack
+    def stack(self, *n):
+        for delta in n:
+            self.curstack += delta
+            if self.curstack > self.maxstack:
+                self.maxstack = self.curstack
 
     def absfix(self, id):
         f = ["abs", -1]
@@ -243,8 +244,7 @@ def f_Lcompile(x):
                 ctx.code.append((STORE_GLOBAL, len(ctx.names)-1))
             else:
                 ctx.code.append((STORE, s.name))
-            ctx.stack(2)
-            ctx.stack(-1)
+            ctx.stack(2, -1)
             return
 
         if s is _progn:
@@ -260,8 +260,8 @@ def f_Lcompile(x):
 
         if s is _if:
             f_Lcompile(x[1])
-            ctx.stack(-1)
             ctx.code.append((POP_JUMP_IF_FALSE, ctx.absfix(0)))
+            ctx.stack(-1)
             f_Lcompile(x[2])
             ctx.code.append((JUMP_ABSOLUTE, ctx.absfix(1)))
             ctx.fix(0)
@@ -318,29 +318,29 @@ def f_Lcompile(x):
                 # Closure
                 for v in nctx.freevars:
                     ctx.code.append((LOADCL, v))
+                    ctx.stack(1)
                 ctx.code.append((BUILD_TUPLE, len(nctx.freevars)))
+                ctx.stack(-len(nctx.freevars), 1)
                 ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
+                ctx.stack(1)
                 if sys.version_info > (3,):
                     # Python 3 qualified name
                     ctx.constants.append("<lambda>")
                     ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
-                    ctx.stack(4)
-                    ctx.stack(-3)
+                    ctx.stack(1, -3)
                 else:
-                    ctx.stack(3)
                     ctx.stack(-2)
                 ctx.code.append((MAKE_CLOSURE, 0))
             else:
                 # Function (why not an empty closure?)
                 ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
+                ctx.stack(1)
                 if sys.version_info > (3,):
                     # Python 3 qualified name
                     ctx.constants.append("<lambda>")
                     ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
-                    ctx.stack(3)
-                    ctx.stack(-2)
+                    ctx.stack(1, -2)
                 else:
-                    ctx.stack(2)
                     ctx.stack(-1)
                 ctx.code.append((MAKE_FUNCTION, 0))
             return

@@ -1,4 +1,4 @@
-A Lisp dialect compiler targeting Python
+A Lisp dialect compiler targeting Python bytecode
 
 - A compile-only implementation
 - Works with Python 2.x / 3.x and PyPy

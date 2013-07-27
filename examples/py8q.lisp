@@ -10,7 +10,7 @@
         (print sol)
         (dotimes (j n)
           (let ((diag (+ i j))
-                (cdiag (+ i (- (- n 1) j))))
+                (cdiag (+ i (- n 1 j))))
             (when (and (bitfree? cols j)
                        (bitfree? diags diag)
                        (bitfree? cdiags cdiag))

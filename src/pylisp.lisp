@@ -61,4 +61,4 @@
 
 (print "PyLisp 0.002")
 
-(python "globals().__setitem__('debug', True)")
+;(python "globals().__setitem__('debug', True)")

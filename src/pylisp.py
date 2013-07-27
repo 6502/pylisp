@@ -6,7 +6,7 @@ from opcode import opname, opmap
 import types
 
 # When true every code object produced is immediately disassembled
-debug = False
+_L_2adebug_2a = False
 
 # Map all defined opcodes to globals
 for k in opmap.keys():
@@ -199,7 +199,7 @@ class Context(object):
                                bytes(),                                  # lnotab
                                tuple(self.freevars),                     # freevars
                                tuple(self.cellvars)]))                   # cellvars
-        if debug:
+        if _L_2adebug_2a:
             f_Lout("Created callable %s (stacksize = %i)\n" % (name, self.maxstack))
             f_Lout("  local = %r\n" % self.local)
             f_Lout("  outer = %r\n" % self.outer)
@@ -467,6 +467,9 @@ def f_Lmapn(f, count):
 def f_Lmapl(f, L):
     for i in L:
         f(i)
+
+def f_Lerror(x):
+    raise RuntimeError(x)
 
 try:
     raw_input

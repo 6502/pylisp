@@ -24,8 +24,12 @@
 (fsetq apply (python "lambda f, args: f(*args)"))
 (fsetq range (python "lambda *args: list(range(*args))"))
 (fsetq map (python "lambda *args: list(map(*args))"))
+(fsetq symbol? (python "lambda x: isinstance(x, Symbol)"))
+(fsetq list? (python "lambda x: isinstance(x, list)"))
+(fsetq symbol-name (python "lambda x: f_Ldemangle(x.name)"))
 (defun first (x) (aref x 0))
 (defun second (x) (aref x 1))
+(defun last (x) (aref x -1))
 (fsetq push (python "lambda x, L: (L.append(x), x)[1]"))
 (fsetq rest (python "lambda x: x[1:]"))
 (defun xlist (x) (apply #'list x))
@@ -88,6 +92,20 @@
             '(emit "BINARY_TRUE_DIVIDE")
             '(stack-effect -1))))
 
+(defmacro aref (x *others) (if others (lassoc-binop "BINARY_SUBSCR" x others) x))
+
+(fsetq butlast (python "lambda L: L[:-1]"))
+
+(defmacro set-aref (x *others)
+  (list 'bytecode
+        (last others)
+        '(emit "DUP_TOP")
+        '(stack-effect 1)
+        (+ (list 'aref x) (xlist (butlast (butlast others))))
+        (aref others (- (length others) 2))
+        '(emit "STORE_SUBSCR")
+        '(stack-effect -1)))
+
 (defun compare-op (name index x others)
   (if (= (length others) 1)
       (list 'bytecode
@@ -104,6 +122,13 @@
 (defmacro >  (x *others) (compare-op '>  4 x others))
 (defmacro >= (x *others) (compare-op '>= 5 x others))
 
-(print "PyLisp 0.003")
+(defmacro setf (place value)
+  (if (symbol? place)
+      (list 'setq place value)
+      (if (and (list? place) (symbol? (first place)))
+          (+ (list (intern (+ "set-" (symbol-name (first place)))))
+             (rest place)
+             (list value))
+          (error "Invalid setf place"))))
 
-;(python "globals().__setitem__('debug', True)")
+(print "PyLisp 0.003")

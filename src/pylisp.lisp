@@ -26,6 +26,7 @@
 (fsetq map (python "lambda *args: list(map(*args))"))
 (defun first (x) (aref x 0))
 (defun second (x) (aref x 1))
+(fsetq push (python "lambda x, L: (L.append(x), x)[1]"))
 (fsetq rest (python "lambda x: x[1:]"))
 (defun xlist (x) (apply #'list x))
 (fsetq length py:len)
@@ -59,6 +60,50 @@
             (+ (list 'and) (xlist (rest conds)))
             False)))
 
-(print "PyLisp 0.002")
+(defun lassoc-binop (opcode x others)
+  (let ((code (list 'bytecode x))
+        (op (list 'emit opcode)))
+    (dolist (y others)
+      (push y code)
+      (push op code)
+      (push '(stack-effect -1) code))
+    code))
+
+(defmacro + (x *others) (if others (lassoc-binop "BINARY_ADD" x others) x))
+(defmacro * (x *others) (if others (lassoc-binop "BINARY_MULTIPLY" x others) x))
+
+(defmacro - (x *others)
+  (if others
+      (lassoc-binop "BINARY_SUBTRACT" x others)
+      (list 'bytecode
+            x
+            '(emit "UNARY_NEGATIVE"))))
+
+(defmacro / (x *others)
+  (if others
+      (lassoc-binop "BINARY_TRUE_DIVIDE" x others)
+      (list 'bytecode
+            1
+            x
+            '(emit "BINARY_TRUE_DIVIDE")
+            '(stack-effect -1))))
+
+(defun compare-op (name index x others)
+  (if (= (length others) 1)
+      (list 'bytecode
+            x
+            (first others)
+            (list 'emit "COMPARE_OP" index)
+            '(stack-effect -1))
+      (+ (list 'funcall (list 'function name) x) (xlist others))))
+
+(defmacro <  (x *others) (compare-op '<  0 x others))
+(defmacro <= (x *others) (compare-op '<= 1 x others))
+(defmacro =  (x *others) (compare-op '=  2 x others))
+(defmacro /= (x *others) (compare-op '/= 3 x others))
+(defmacro >  (x *others) (compare-op '>  4 x others))
+(defmacro >= (x *others) (compare-op '>= 5 x others))
+
+(print "PyLisp 0.003")
 
 ;(python "globals().__setitem__('debug', True)")

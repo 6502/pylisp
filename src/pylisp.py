@@ -67,6 +67,9 @@ _commasplice = f_Lintern(",@")
 _comma = f_Lintern(",")
 _function = f_Lintern("function")
 _python = f_Lintern("python")
+_emit = f_Lintern("emit")
+_bytecode = f_Lintern("bytecode")
+_stackeffect = f_Lintern("stack-effect")
 
 # Global array for quoted values
 _globals = []
@@ -233,6 +236,20 @@ def f_Lcompile(x):
         m = globals().get("m" + s.name)
         if m:
             f_Lcompile(m(*x[1:]))
+            return
+
+        if s is _emit:
+            opcode = globals()[x[1]]
+            ctx.code.append(tuple([opcode] + x[2:]))
+            return
+
+        if s is _bytecode:
+            for y in x[1:]:
+                f_Lcompile(y)
+            return
+
+        if s is _stackeffect:
+            ctx.stack(*x[1:])
             return
 
         if s is _setq:

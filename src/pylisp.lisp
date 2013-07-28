@@ -26,6 +26,8 @@
 (fsetq map (python "lambda *args: list(map(*args))"))
 (fsetq symbol? (python "lambda x: isinstance(x, Symbol)"))
 (fsetq list? (python "lambda x: isinstance(x, list)"))
+(fsetq string? (python "lambda x: isinstance(x, (str, unicode))"))
+(fsetq number? (python "lambda x: isinstance(x, (int, float, long))"))
 (fsetq symbol-name (python "lambda x: f_Ldemangle(x.name)"))
 (defun first (x) (aref x 0))
 (defun second (x) (aref x 1))
@@ -152,4 +154,50 @@
              (list value))
           (error "Invalid setf place"))))
 
-(print "PyLisp 0.003")
+(defun bqconst (x)
+  (if (and (list? x) x)
+      (if (or (= (aref x 0) '|,|)
+              (= (aref x 0) '|`|)
+              (= (aref x 0) '|,@|))
+          False
+          (and (bqconst (first x))
+               (bqconst (rest x))))
+      True))
+
+(defun bquote (x)
+  (cond
+    ((or (number? x) (string? x))
+     x)
+    ((bqconst x)
+     (list 'quote x))
+    ((list? x)
+     (cond
+       ((= (aref x 0) '|`|)
+        (list '|`| (bquote (aref x 1))))
+       ((= (aref x 0) '|,|)
+        (aref x 1))
+       ((= (aref x 0) '|,@|)
+        (error ",@ must be used inside lists"))
+       (True
+        (let ((res (list '+))
+              (clist (list 'list)))
+          (dolist (el x)
+            (cond
+              ((and (list? el) (= (aref el 0) '|,@|))
+               (when (> (length clist) 1)
+                 (push clist res)
+                 (setq clist (list 'list)))
+               (push (aref el 1) res))
+              (True
+               (push (bquote el) clist))))
+          (when (> (length clist) 1)
+            (push clist res))
+          (if (> (length res) 2)
+              res
+              (aref res 1))))))
+    (True (list 'quote x))))
+
+(defmacro |`| (x)
+  (bquote x))
+
+(print "PyLisp 0.004")

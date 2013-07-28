@@ -5,6 +5,12 @@ import inspect
 from opcode import opname, opmap
 import types
 
+python3 = sys.version_info > (3,)
+
+if python3:
+    unicode = str
+    long = int
+
 # When true every code object produced is immediately disassembled
 _L_2adebug_2a = False
 
@@ -172,7 +178,7 @@ class Context(object):
                     bytestr.append(v & 255)
                     bytestr.append(v >> 8)
 
-        bytestr = bytes(bytestr) if sys.version_info > (3,) else "".join(map(chr, bytestr))
+        bytestr = bytes(bytestr) if python3 else "".join(map(chr, bytestr))
 
         flags = 0 if self.cellvars else (inspect.CO_NEWLOCALS | inspect.CO_OPTIMIZED)
 
@@ -183,21 +189,21 @@ class Context(object):
             flags |= inspect.CO_VARARGS
             self.args -= 1
 
-        co = types.CodeType(*([self.args,] +                             # argcount
-                              ([0] if sys.version_info > (3,) else []) + # kw-only argcount
-                              [len(self.locals),                         # nlocals
-                               self.maxstack,                            # stacksize
-                               flags,                                    # flags
-                               bytestr,                                  # bytecode
-                               tuple(self.constants),                    # constants
-                               tuple(self.names),                        # names
-                               tuple(self.locals),                       # varnames
-                               "<bytecode>",                             # filename
-                               name,                                     # name
-                               0,                                        # firstlineno
-                               bytes(),                                  # lnotab
-                               tuple(self.freevars),                     # freevars
-                               tuple(self.cellvars)]))                   # cellvars
+        co = types.CodeType(*([self.args,] +             # argcount
+                              ([0] if python3 else []) + # kw-only argcount
+                              [len(self.locals),         # nlocals
+                               self.maxstack,            # stacksize
+                               flags,                    # flags
+                               bytestr,                  # bytecode
+                               tuple(self.constants),    # constants
+                               tuple(self.names),        # names
+                               tuple(self.locals),       # varnames
+                               "<bytecode>",             # filename
+                               name,                     # name
+                               0,                        # firstlineno
+                               bytes(),                  # lnotab
+                               tuple(self.freevars),     # freevars
+                               tuple(self.cellvars)]))   # cellvars
         if _L_2adebug_2a:
             f_Lout("Created callable %s (stacksize = %i)\n" % (name, self.maxstack))
             f_Lout("  local = %r\n" % self.local)
@@ -342,7 +348,7 @@ def f_Lcompile(x):
                 ctx.stack(-len(nctx.freevars), 1)
                 ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
                 ctx.stack(1)
-                if sys.version_info > (3,):
+                if python3:
                     # Python 3 qualified name
                     ctx.constants.append("<lambda>")
                     ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
@@ -354,7 +360,7 @@ def f_Lcompile(x):
                 # Function (why not an empty closure?)
                 ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
                 ctx.stack(1)
-                if sys.version_info > (3,):
+                if python3:
                     # Python 3 qualified name
                     ctx.constants.append("<lambda>")
                     ctx.code.append((LOAD_CONST, len(ctx.constants)-1))

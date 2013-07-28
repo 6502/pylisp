@@ -23,6 +23,9 @@ STORE = -2
 # Load_closure opcode
 LOADCL = -3
 
+# Label pseudo-instruction
+LABEL = -4
+
 # Utility functions
 
 def f_Lout(x):
@@ -79,6 +82,10 @@ _globals = []
 
 ctx = None
 
+class f_Llabel(object):
+    def __init__(self):
+        self.address = None
+
 class Context(object):
     def __init__(self):
         self.local = {}         # known local names
@@ -101,17 +108,6 @@ class Context(object):
             self.curstack += delta
             if self.curstack > self.maxstack:
                 self.maxstack = self.curstack
-
-    def absfix(self, id):
-        f = ["abs", -1]
-        try:
-            self.pending_fixes[id].append(f)
-        except KeyError:
-            self.pending_fixes[id] = [f]
-        return f
-
-    def fix(self, id):
-        self.pending_fixes[id].pop()[1] = len(self.code)
 
     def make_code(self, name, rest):
         ctx.code.append((RETURN_VALUE,))
@@ -158,20 +154,23 @@ class Context(object):
                             len(self.cellvars) + self.freevars.index(sym))
         bytestr = []
 
+        # Fix up labels
         pc = 0
-        addr = []
         for op in self.code:
-            addr.append(pc)
-            pc += 1 if len(op) == 1 else 3
+            if op[0] == LABEL:
+                op[1].address = pc
+            else:
+                pc += 1 if len(op) == 1 else 3
 
         for op in self.code:
-            bytestr.append(op[0])
-            if len(op) == 2:
-                v = op[1]
-                if isinstance(v, list):
-                    v = addr[v[1]]
-                bytestr.append(v & 255)
-                bytestr.append(v >> 8)
+            if op[0] != LABEL:
+                bytestr.append(op[0])
+                if len(op) == 2:
+                    v = op[1]
+                    if isinstance(v, f_Llabel):
+                        v = v.address
+                    bytestr.append(v & 255)
+                    bytestr.append(v >> 8)
 
         bytestr = bytes(bytestr) if sys.version_info > (3,) else "".join(map(chr, bytestr))
 
@@ -277,13 +276,16 @@ def f_Lcompile(x):
 
         if s is _if:
             f_Lcompile(x[1])
-            ctx.code.append((POP_JUMP_IF_FALSE, ctx.absfix(0)))
+            elselab = f_Llabel()
+            endlab = f_Llabel()
+            ctx.code.append((POP_JUMP_IF_FALSE, elselab))
             ctx.stack(-1)
             f_Lcompile(x[2])
-            ctx.code.append((JUMP_ABSOLUTE, ctx.absfix(1)))
-            ctx.fix(0)
+            ctx.code.append((JUMP_ABSOLUTE, endlab))
+            ctx.stack(-1)
+            ctx.code.append((LABEL, elselab))
             f_Lcompile(x[3] if len(x) == 4 else None)
-            ctx.fix(1)
+            ctx.code.append((LABEL, endlab))
             return
 
         if s is _quote:
@@ -486,7 +488,10 @@ def balanced(x):
 
 curr = ""
 while True:
-    t = raw_input("> " if balanced(curr) else "  ")
+    try:
+        t = raw_input("> " if balanced(curr) else "  ")
+    except EOFError:
+        break
     curr += t + "\n"
     if balanced(curr):
         parse(curr, f_Leval_2bprint)

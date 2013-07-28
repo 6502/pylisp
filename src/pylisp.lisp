@@ -245,4 +245,27 @@
               ,@(xlist body))
             ,@(* (list None) (length bindings))))
 
+(defmacro aref (x *args)
+  (let ((code `(bytecode ,x)))
+    (dolist (y args)
+      (push y code)
+      (push `(emit "BINARY_SUBSCR") code)
+      (push `(stack-effect -1) code))
+    code))
+
+(defmacro set-aref (x *args)
+  (let ((code `(bytecode
+                  ,(last args)
+                  (emit "DUP_TOP")
+                  (stack-effect 1)
+                  ,x)))
+    (dolist (y (butlast (butlast args)))
+      (push y code)
+      (push `(emit "BINARY_SUBSCR") code)
+      (push `(stack-effect -1)))
+    (push (last (butlast args)) code)
+    (push `(emit "STORE_SUBSCR") code)
+    (push `(stack-effect -1) code)
+    code))
+
 (print "PyLisp 0.004")

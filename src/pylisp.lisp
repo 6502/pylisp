@@ -83,7 +83,7 @@
   (if cases
       (list 'if
             (first (first cases))
-            (second (first cases))
+            (+ (list 'progn) (rest (first cases)))
             (+ (list 'cond) (xlist (rest cases))))
       None))
 
@@ -199,5 +199,11 @@
 
 (defmacro |`| (x)
   (bquote x))
+
+(setf *gensym* 0)
+
+(defun gensym ()
+  (setf *gensym* (+ 1 *gensym*))
+  (intern (+ "#:" (str *gensym*) "")))
 
 (print "PyLisp 0.004")

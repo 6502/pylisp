@@ -216,4 +216,33 @@
       (apply (symbol-macro (first x)) (rest x))
       x))
 
+(fsetq dis (python "lambda x: dis.dis(x)"))
+
+(defmacro funcall (f *args)
+  `(bytecode
+    ,f
+    ,@(xlist args)
+    (emit "CALL_FUNCTION" ,(length args))
+    (stack-effect ,(- (length args)))))
+
+(defmacro flet (bindings *body)
+  `(funcall (lambda ,(map (lambda (n)
+                            (intern (+ "py:f" (mangle (symbol-name (first n))))))
+                      bindings)
+              ,@(xlist body))
+            ,@(map (lambda (n)
+                     `(lambda ,@(rest n)))
+                   bindings)))
+
+(defmacro labels (bindings *body)
+  `(funcall (lambda ,(map (lambda (n)
+                            (intern (+ "py:f" (mangle (symbol-name (first n))))))
+                      bindings)
+              ,@(map (lambda (n)
+                       `(setq ,(intern (+ "py:f" (mangle (symbol-name (first n)))))
+                              (lambda ,@(rest n))))
+                     bindings)
+              ,@(xlist body))
+            ,@(* (list None) (length bindings))))
+
 (print "PyLisp 0.004")

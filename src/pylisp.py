@@ -94,19 +94,19 @@ class f_Llabel(object):
 
 class Context(object):
     def __init__(self):
-        self.local = {}         # known local names
-        self.outer = {}         # known names from outer scopes
-        self.captured = {}      # local names captured by inner scopes
+        self.local = {}           # known local names
+        self.outer = {}           # known names from outer scopes
+        self.captured = {}        # local names captured by inner scopes
 
         self.pending_fixes = {}
         self.args = 0
         self.curstack = 1
         self.maxstack = 1
-        self.constants = [None] # Why None is always here??
-        self.locals = []        # Local names
-        self.names = []         # Global names
-        self.cellvars = []      # Names of locals captured
-        self.freevars = []      # Nonlocals
+        self.constants = [None]   # Why None is always here??
+        self.locals = []          # Local names
+        self.names = []           # Global names
+        self.cellvars = []        # Names of locals captured
+        self.freevars = []        # Nonlocals
         self.code = []
 
     def stack(self, *n):
@@ -262,8 +262,7 @@ def f_Lcompile(x):
             ctx.code.append((DUP_TOP,))
             s = x[1]
             if s.name[:7] == "_Lpy_3a":
-                ctx.names.append(f_Ldemangle(s.name)[3:])
-                ctx.code.append((STORE_GLOBAL, len(ctx.names)-1))
+                ctx.code.append((STORE, f_Ldemangle(s.name)[3:]))
             else:
                 ctx.code.append((STORE, s.name))
             ctx.stack(2, -1)
@@ -309,7 +308,8 @@ def f_Lcompile(x):
             octx = ctx
             ctx = Context()
             ctx.outer = octx.outer.copy()
-            argnames = [v.name for v in x[1]]
+            argnames = [f_Ldemangle(v.name)[3:] if v.name[:7] == "_Lpy_3a" else v.name
+                        for v in x[1]]
             rest = False
             if argnames and argnames[-1][:5] == '_L_2a' and len(argnames[-1]) > 5:
                 # Rest argument

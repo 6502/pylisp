@@ -5,6 +5,7 @@
 (fsetq + (python "lambda x, *args: x+''.join(args) if isinstance(x, str) else sum(args, x)"))
 (fsetq - (python "lambda x, *others: x - sum(others) if others else -x"))
 (fsetq * (python "lambda x, y: x * y"))
+(fsetq % (python "lambda x, y: x % y"))
 (fsetq / (python "lambda x, y: x / y"))
 (fsetq < (python "lambda *args: all(args[i-1] < args[i] for i in range(1, len(args)))"))
 (fsetq <= (python "lambda *args: all(args[i-1] <= args[i] for i in range(1, len(args)))"))
@@ -268,4 +269,14 @@
     (push `(stack-effect -1) code)
     code))
 
-(print "PyLisp 0.004")
+(fsetq clock (python "__import__('time').time"))
+
+(defmacro time (*body)
+  (let ((start (gensym))
+        (res (gensym)))
+    `(let ((,start (clock))
+           (,res (progn ,@(xlist body))))
+       (print (+ (% "Time = %0.3f ms" (* 1000 (- (clock) ,start)))))
+       ,res)))
+
+(print "PyLisp 0.005")

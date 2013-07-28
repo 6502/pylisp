@@ -29,6 +29,8 @@
 (fsetq string? (python "lambda x: isinstance(x, (str, unicode))"))
 (fsetq number? (python "lambda x: isinstance(x, (int, float, long))"))
 (fsetq symbol-name (python "lambda x: f_Ldemangle(x.name)"))
+(fsetq symbol-function (python "lambda x: globals().get('f' + x.name)"))
+(fsetq symbol-macro (python "lambda x: globals().get('m' + x.name)"))
 (defun first (x) (aref x 0))
 (defun second (x) (aref x 1))
 (defun last (x) (aref x -1))
@@ -205,5 +207,13 @@
 (defun gensym ()
   (setf *gensym* (+ 1 *gensym*))
   (intern (+ "#:" (str *gensym*) "")))
+
+(defun macroexpand-1 (x)
+  (if (and (list? x)
+           x
+           (symbol? (first x))
+           (symbol-macro (first x)))
+      (apply (symbol-macro (first x)) (rest x))
+      x))
 
 (print "PyLisp 0.004")

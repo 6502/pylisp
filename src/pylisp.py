@@ -348,7 +348,7 @@ def f_Lcompile(x):
                 ctx.stack(-len(nctx.freevars), 1)
                 ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
                 ctx.stack(1)
-                if python3:
+                if sys.version_info > (3, 3):
                     # Python 3 qualified name
                     ctx.constants.append("<lambda>")
                     ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
@@ -360,7 +360,7 @@ def f_Lcompile(x):
                 # Function (why not an empty closure?)
                 ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
                 ctx.stack(1)
-                if python3:
+                if sys.version_info > (3, 3):
                     # Python 3 qualified name
                     ctx.constants.append("<lambda>")
                     ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
@@ -500,5 +500,8 @@ while True:
         break
     curr += t + "\n"
     if balanced(curr):
-        parse(curr, f_Leval_2bprint)
+        try:
+            parse(curr, f_Leval_2bprint)
+        except Exception as e:
+            print("ERROR: %s" % e)
         curr = ""

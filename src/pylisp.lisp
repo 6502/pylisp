@@ -56,6 +56,15 @@
   (list 'if test
         (+ (list 'progn) (xlist body))))
 
+(defmacro not (x)
+  (list 'bytecode
+        x
+        '(emit "UNARY_NOT")))
+
+(defmacro unless (test *body)
+  (list 'if (list 'not test)
+        (+ (list 'progn) (xlist body))))
+
 (defmacro let (bindings *body)
   (+ (list 'funcall
            (+ (list 'lambda (map #'first bindings))

@@ -127,17 +127,22 @@
             '(emit "BINARY_TRUE_DIVIDE")
             '(stack-effect -1))))
 
-(defmacro aref (x *others) (if others (lassoc-binop "BINARY_SUBSCR" x others) x))
+(defmacro aref (x *others)
+  (if others
+      (lassoc-binop "BINARY_SUBSCR" x others)
+      x))
 
 (fsetq butlast (python "lambda L: L[:-1]"))
 
 (defmacro set-aref (x *others)
   (list 'bytecode
+        (+ (list 'aref x) (xlist (butlast (butlast others))))
+        (aref others (- (length others) 2))
         (last others)
         '(emit "DUP_TOP")
         '(stack-effect 1)
-        (+ (list 'aref x) (xlist (butlast (butlast others))))
-        (aref others (- (length others) 2))
+        '(emit "ROT_FOUR")
+        '(emit "ROT_FOUR")
         '(emit "STORE_SUBSCR")
         '(stack-effect -1)))
 
@@ -254,29 +259,6 @@
                      bindings)
               ,@(xlist body))
             ,@(* (list None) (length bindings))))
-
-(defmacro aref (x *args)
-  (let ((code `(bytecode ,x)))
-    (dolist (y args)
-      (push y code)
-      (push `(emit "BINARY_SUBSCR") code)
-      (push `(stack-effect -1) code))
-    code))
-
-(defmacro set-aref (x *args)
-  (let ((code `(bytecode
-                  ,(last args)
-                  (emit "DUP_TOP")
-                  (stack-effect 1)
-                  ,x)))
-    (dolist (y (butlast (butlast args)))
-      (push y code)
-      (push `(emit "BINARY_SUBSCR") code)
-      (push `(stack-effect -1)))
-    (push (last (butlast args)) code)
-    (push `(emit "STORE_SUBSCR") code)
-    (push `(stack-effect -1) code)
-    code))
 
 (fsetq clock (python "__import__('time').time"))
 

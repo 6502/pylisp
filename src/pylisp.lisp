@@ -200,7 +200,7 @@
               (clist (list 'list)))
           (dolist (el x)
             (cond
-              ((and (list? el) (= (aref el 0) '|,@|))
+              ((and (list? el) el (= (aref el 0) '|,@|))
                (when (> (length clist) 1)
                  (push clist res)
                  (setq clist (list 'list)))
@@ -269,5 +269,26 @@
            (,res (progn ,@(xlist body))))
        (print (+ (% "Time = %0.3f ms" (* 1000 (- (clock) ,start)))))
        ,res)))
+
+(defmacro while (test *body)
+  (if body
+      (let ((testl (label))
+            (loopl (label)))
+        `(bytecode
+          (emit "JUMP_ABSOLUTE" ,testl)
+          (emit "LABEL" ,loopl)
+          (progn ,@(xlist body))
+          (emit "POP_TOP")
+          (stack-effect -1)
+          (emit "LABEL" ,testl)
+          ,test
+          (emit "POP_JUMP_IF_TRUE" ,loopl)
+          ,None))
+      (let ((loopl (label)))
+        `(bytecode
+          (emit "LABEL" ,loopl)
+          ,test
+          (emit "POP_JUMP_IF_TRUE" ,loopl)
+          ,None))))
 
 (print "PyLisp 0.005")

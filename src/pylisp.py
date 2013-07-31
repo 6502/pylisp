@@ -118,9 +118,13 @@ class Context(object):
     def make_code(self, name, rest):
         ctx.code.append((RETURN_VALUE,))
 
-        # Fix up generic opcodes
+        # Fix up generic opcodes & names
         free_fixup = []
         for i, op in enumerate(self.code):
+            if op[0] == LOAD_ATTR:
+                if op[1] not in self.names:
+                    self.names.append(op[1])
+                self.code[i] = op = (op[0], self.names.index(op[1]))
             if op[0] in (LOAD, STORE, LOADCL):
                 opcode, sym = op
                 if sym in self.captured:

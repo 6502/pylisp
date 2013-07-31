@@ -291,4 +291,16 @@
           (emit "POP_JUMP_IF_TRUE" ,loopl)
           ,None))))
 
+(defmacro push (x L)
+  `(bytecode
+    ,x
+    (emit "DUP_TOP")
+    (stack-effect 1)
+    ,L
+    (emit "LOAD_ATTR" "append")
+    (emit "ROT_TWO")
+    (emit "CALL_FUNCTION" 1)
+    (emit "POP_TOP")
+    (stack-effect -1)))
+
 (print "PyLisp 0.005")

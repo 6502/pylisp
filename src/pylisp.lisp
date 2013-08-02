@@ -303,4 +303,61 @@
     (emit "POP_TOP")
     (stack-effect -1)))
 
-(print "PyLisp 0.005")
+(defun modify-aref (place modifier)
+  `(bytecode
+    (aref ,@(butlast place))  ;; Array
+    (emit "DUP_TOP")          ;; Array Array
+    (stack-effect 1)
+    ,(last place)             ;; Array Array Index
+    (emit "DUP_TOP")          ;; Array Array Index Index
+    (stack-effect 1)
+    (emit "ROT_THREE")        ;; Array Index Array Index
+    (emit "BINARY_SUBSCR")    ;; Array Index OldValue
+    (stack-effect -1)
+    ,@modifier                ;; Array Index NewValue
+    (emit "DUP_TOP")          ;; Array Index NewValue NewValue
+    (stack-effect 1)
+    (emit "ROT_FOUR")         ;; NewValue Array Index NewValue
+    (emit "ROT_FOUR")         ;; NewValue NewValue Array Index
+    (emit "STORE_SUBSCR")     ;; NewValue
+    (stack-effect -2)))
+
+(defmacro inc-aref (*args)
+  (modify-aref (xlist (butlast args))
+               `(,(last args)
+                 (emit "BINARY_ADD")
+                 (stack-effect -1))))
+
+(defmacro dec-aref (*args)
+  (modify-aref (xlist (butlast args))
+               `(,(last args)
+                 (emit "BINARY_SUBTRACT")
+                 (stack-effect -1))))
+
+(defmacro incf (place *delta)
+  (setf delta (if delta (first delta) 1))
+  (cond
+   ((symbol? place)
+    `(setf ,place (+ ,place ,delta)))
+   ((and (list? place)
+         place
+         (symbol? (first place)))
+    `(,(intern (+ "inc-" (symbol-name (first place))))
+      ,@(rest place)
+      ,delta))
+   (True (error "Invalid incf place"))))
+
+(defmacro decf (place *delta)
+  (setf delta (if delta (first delta) 1))
+  (cond
+   ((symbol? place)
+    `(setf ,place (- ,place ,delta)))
+   ((and (list? place)
+         place
+         (symbol? (first place)))
+    `(,(intern (+ "dec-" (symbol-name (first place))))
+      ,@(rest place)
+      ,delta))
+   (True (error "Invalid decf place"))))
+
+(print "PyLisp 0.006")

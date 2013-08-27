@@ -388,4 +388,12 @@
            res)
        ,@(xlist body))))
 
+(defmacro tuple (*args)
+  `(bytecode
+    ,@(xlist args)
+    (stack-effect ,(length args))
+    (emit "BUILD_TUPLE" ,(length args))
+    (stack-effect ,(- (length args)))
+    (stack-effect 1)))
+
 (print "PyLisp 0.006")

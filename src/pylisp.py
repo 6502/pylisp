@@ -10,6 +10,7 @@ python3 = sys.version_info > (3,)
 if python3:
     unicode = str
     long = int
+    raw_input = input
 
 # When true every code object produced is immediately disassembled
 _L_2adebug_2a = False
@@ -468,10 +469,6 @@ def f_Lstr(x):
 def f_Leval_2bprint(x):
     f_Lout("--> " + f_Lstr(f_Leval(x)) + "\n")
 
-def f_Lloopf(cond, body):
-    while cond():
-        body()
-
 def f_Lmapn(f, count):
     for i in range(count):
         f(i)
@@ -483,14 +480,11 @@ def f_Lmapl(f, L):
 def f_Lerror(x):
     raise RuntimeError(x)
 
-try:
-    raw_input
-except NameError:
-    long = int
-    raw_input = input
+def f_Lload(x):
+    with open(x) as f:
+        parse(f.read(), f_Leval)
 
-with open("pylisp.lisp") as f:
-    parse(f.read(), f_Leval)
+f_Lload("pylisp.lisp")
 
 def balanced(x):
     tk = tokenize(x)

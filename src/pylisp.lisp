@@ -39,6 +39,7 @@
 (fsetq rest (python "lambda x: x[1:]"))
 (defun xlist (x) (apply #'list x))
 (fsetq length py:len)
+(fsetq slice (python "lambda L, a=0, b=None: L[a:b]"))
 
 (defmacro dotimes (var+count *body)
   (list 'mapn

@@ -389,6 +389,28 @@
            res)
        ,@(xlist body))))
 
+(defmacro . (base *fields)
+  `(bytecode
+    ,base
+    ,@(map (lambda (f)
+             `(emit "LOAD_ATTR" ,(symbol-name f)))
+           fields)))
+
+(defmacro set-. (base *rest)
+  (let ((n (length rest)))
+    `(bytecode
+      ,base
+      ,@(map (lambda (f)
+               `(emit "LOAD_ATTR" ,(symbol-name f)))
+             (slice rest 0 (- n 2)))
+      ,(last rest)       ; obj v
+      (emit "DUP_TOP")   ; obj v v
+      (stack-effect 1)
+      (emit "ROT_THREE") ; v obj v
+      (emit "ROT_THREE") ; v v obj
+      (emit "STORE_ATTR" ,(symbol-name (aref rest (- n 2))))
+      (stack-effect -2))))
+
 (defmacro tuple (*args)
   `(bytecode
     ,@(xlist args)
@@ -397,4 +419,26 @@
     (stack-effect ,(- (length args)))
     (stack-effect 1)))
 
-(print "PyLisp 0.006")
+(fsetq dict (python "dict"))
+(fsetq make-class (python "type"))
+
+(defmacro defobject (name fields)
+  (let ((sname (symbol-name name)))
+    `(progn
+       (fsetq ,name (make-class ,sname (tuple) (dict)))
+       (setf (. #',name __init__)
+             (lambda (self ,@fields)
+               ,@(map (lambda (f)
+                        `(setf (. self ,f) ,f))
+                      fields)
+               None))
+       ',name)))
+
+(defmacro defmethod (class name args *body)
+  `(progn
+     (setf (. (function ,class) ,name)
+           (lambda (self ,@args)
+             ,@(xlist body)))
+     ',name))
+
+(print "PyLisp 0.007")

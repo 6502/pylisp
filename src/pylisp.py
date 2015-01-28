@@ -80,6 +80,7 @@ _python = f_Lintern("python")
 _emit = f_Lintern("emit")
 _bytecode = f_Lintern("bytecode")
 _stackeffect = f_Lintern("stack-effect")
+_dot = f_Lintern(".")
 
 # Global array for quoted values
 _globals = []
@@ -122,7 +123,7 @@ class Context(object):
         # Fix up generic opcodes & names
         free_fixup = []
         for i, op in enumerate(self.code):
-            if op[0] == LOAD_ATTR:
+            if op[0] in (LOAD_ATTR, STORE_ATTR):
                 if op[1] not in self.names:
                     self.names.append(op[1])
                 self.code[i] = op = (op[0], self.names.index(op[1]))
@@ -444,7 +445,11 @@ def parse(x, f):
             try:
                 return float(v)
             except ValueError:
-                return f_Lintern(v)
+                if "." in v and v[0] != "." and v[-1] != "." and ".." not in v:
+                    parts = list(map(f_Lintern, v.split(".")))
+                    return [_dot] + parts
+                else:
+                    return f_Lintern(v)
     while tokens:
         f(r())
 
